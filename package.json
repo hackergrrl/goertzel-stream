@@ -1,15 +1,17 @@
 {
-  "name": "goertzel",
-  "description": "Fast frequency detection using the Goertzel algorithm",
+  "name": "goertzel-stream",
+  "description": "Streaming frequency detection using the Goertzel algorithm",
   "version": "1.0.0",
   "repository": {
-    "url": "git://github.com/noffle/goertzel.git"
+    "url": "git://github.com/noffle/goertzel-stream.git"
   },
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.js && standard"
   },
-  "dependencies": {},
+  "dependencies": {
+    "goertzel": "^1.0.0"
+  },
   "devDependencies": {
     "standard": "5.4.1",
     "tape": "4.4.0"
@@ -21,6 +23,8 @@
     "dft",
     "fourier",
     "detect",
-    "detection"
+    "detection",
+    "stream",
+    "streaming"
   ]
 }
