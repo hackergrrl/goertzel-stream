@@ -1,49 +1,91 @@
-module.exports = function (opts) {
-  // if (!(this instanceof Goertzel)) return new Goertzel(opts)
-  if (!opts) opts = {}
+var goertzel = require('goertzel')
+var EventEmitter = require('events')
+var util = require('util')
+var WritableStream = require('stream').Writable
 
-  if (!opts.threshold) opts.threshold = 1000
+util.inherits(GoertzelStream, EventEmitter)
+util.inherits(GoertzelStream, WritableStream)
 
-  if (!opts.targetFrequency) {
-    throw new Error('must specify opts.targetFrequency')
-  }
-  if (!opts.sampleRate) {
-    throw new Error('must specify opts.sampleRate')
-  }
-
-  if (opts.sampleRate < opts.targetFrequency * 2) {
-    throw new Error('sampleRate should be at least 2 times larger than targetFrequency')
+function GoertzelStream(freqs, sampleRate, testsPerSecond) {
+  if (!(this instanceof GoertzelStream)) {
+    return new GoertzelStream(freqs, sampleRate, testsPerSecond)
   }
 
-  return function (samples) {
-    // references:
-    //   https://en.wikipedia.org/wiki/Goertzel_algorithm
-    //   http://www.embedded.com/design/configurable-systems/4024443/The-Goertzel-Algorithm
-    var k = Math.floor(0.5 + (samples.length * opts.targetFrequency) / opts.sampleRate)
-    var w = (2 * Math.PI / samples.length) * k
-    var c = Math.cos(w)
-    var s = Math.sin(w)
-    var coeff = 2 * c
+  // Validate arguments.
+  if (!freqs || (typeof freqs != 'object') || freqs.length === 0) {
+    throw new Error('first argument must be an array of frequencies to detect')
+  }
+  sampleRate = sampleRate || 44100
+  testsPerSecond = testsPerSecond || 50
 
-    var q0 = 0
-    var q1 = 0
-    var q2 = 0
+  // This is an event emitter and a writable stream.
+  EventEmitter.call(this)
+  WritableStream.call(this, { objectMode: true })
 
-    q1 = q2 = 0
+  // Create the goertzel detectors for the frequencies.
+  var detectors = freqs.map(function (f) {
+    return goertzel({
+      targetFrequency: f,
+      sampleRate: sampleRate
+    })
+  })
 
-    for (var i = 0; i < samples.length; i++) {
-      q0 = coeff * q1 - q2 + samples[i]
-      q2 = q1
-      q1 = q0
+  // Track time elapsed (audio time, not wall clock time).
+  var t = 0
+
+  // Track which tones are actively being detected.
+  var active = {}
+
+  this._write = function (buffer, enc, next) {
+    var chunk = buffer.getChannelData(0)
+    var chunkSize = sampleRate / testsPerSecond
+    var chunks = Math.floor(chunk.length / chunkSize)
+    // console.log(buffer.length, chunkSize)
+    var self = this
+    // TODO: accumulate in buffer when buffer.length < chunkSize
+    for (var i=0; i < chunks; i++) {
+      var slice = chunk.slice(i * chunkSize, i * chunkSize + chunkSize)
+
+      process(slice)
+
+      // Move the current time forward.
+      t += 1 / testsPerSecond
     }
 
-    var real = q1 - q2 * c
-    var imaginary = q2 * s
-    var magSquared = real * real + imaginary * imaginary
+    next()
 
-    // console.log('real', real)
-    // console.log('imaginary', imaginary)
-    // console.log('magnitude', magSquared)
-    return magSquared > opts.threshold
+    function process (slice) {
+      var justStarted = []
+      var justEnded = []
+
+      // Run the slice of samples through each goertzel detector.
+      for (var j=0; j < detectors.length; j++) {
+        var freq = freqs[j]
+
+        if (detectors[j](slice)) {
+          if (active[freq] === undefined) {
+            console.log(i, 'yes', freq)
+            active[freq] = t
+            justStarted.push([freq, t])
+          }
+        // else {
+        //   console.log('no', freq)
+        // }
+        } else if (active[freq]) {
+          justEnded.push([freq, active[freq], t])
+          console.log(i, 'no', freq)
+          delete active[freq]
+        }
+      }
+
+      if (justStarted.length > 0) {
+        self.emit('onToneStart', justStarted)
+      }
+      if (justEnded.length > 0) {
+        self.emit('onToneEnd', justEnded)
+      }
+    }
   }
 }
+
+module.exports = GoertzelStream
