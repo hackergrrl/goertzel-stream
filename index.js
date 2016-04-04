@@ -64,16 +64,13 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
 
         if (detectors[j](slice)) {
           if (active[freq] === undefined) {
-            console.log(i, 'yes', freq)
+            // console.log(i, 'yes', freq)
             active[freq] = t
             justStarted.push([freq, t])
           }
-        // else {
-        //   console.log('no', freq)
-        // }
-        } else if (active[freq]) {
+        } else if (active[freq] !== undefined) {
           justEnded.push([freq, active[freq], t])
-          console.log(i, 'no', freq)
+          // console.log(i, 'no', freq)
           delete active[freq]
         }
       }
