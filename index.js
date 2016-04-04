@@ -43,6 +43,7 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
     // console.log(buffer.length, chunkSize)
     var self = this
     // TODO: accumulate in buffer when buffer.length < chunkSize
+    if (chunks <= 0) { throw new Error('chunk size too small') }
     for (var i=0; i < chunks; i++) {
       var slice = chunk.slice(i * chunkSize, i * chunkSize + chunkSize)
 
@@ -69,7 +70,7 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
             justStarted.push([freq, t])
           }
         } else if (active[freq] !== undefined) {
-          justEnded.push([freq, active[freq], t])
+          justEnded.push([freq, active[freq], t + 1 / testsPerSecond])
           // console.log(i, 'no', freq)
           delete active[freq]
         }
