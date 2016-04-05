@@ -1,7 +1,7 @@
 {
   "name": "goertzel-stream",
   "description": "Streaming frequency detection using the Goertzel algorithm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "url": "git://github.com/noffle/goertzel-stream.git"
   },
