@@ -28,19 +28,18 @@ var symbolMap = [
   [ '#', '0', '*', 'D' ]
 ]
 
-var detector = goertzel(dtmf)
+var detector = goertzel(dtmf, 44100, 66)
 
 // mic().pipe(detector)
 
 var tones = new Array(10).fill().map(function () {
   return dtmf[Math.floor(Math.random() * dtmf.length)]
 })
-tones = [1477]
 console.log(tones)
 
 Generator(
     function (time) {
-        if (time > tones.length) { return 0 }
+        // if (time > tones.length) { return 0 }
         // console.log(tones[Math.floor(time/2)])
         // console.log(tones[Math.floor(time)])
         return [
