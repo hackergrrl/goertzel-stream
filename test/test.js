@@ -1,119 +1,81 @@
 var test = require('tape')
 var goertzel = require('../index')
+var Generator = require('audio-generator')
 
-// sine wave at some Hz and time offset (ms)
+// sine wave at some Hz for duration t
 function sin (hz, t) {
-  return Math.sin(Math.PI * 2 * t * hz)
+  return Generator(function (time) {
+    if (time <= t) {
+      return Math.sin(Math.PI * 2 * time * hz)
+    } else {
+      return 0
+    }
+  })
 }
 
 test('1 Hz', function (t) {
-  t.plan(1)
-
-  var opts = {
-    // hz
-    targetFrequency: 1,
-    // samples per second
-    sampleRate: 100,
-    // samples per block
-    numSamples: 100
-  }
-
-  var detect = goertzel(opts)
-
-  // generate a sine wave at 1 Hz
-  var data = []
-  for (var i = 0; i < opts.numSamples; i++) {
-    var v = sin(opts.targetFrequency, i / opts.sampleRate)
-    data.push(v)
-  }
-
-  var match = detect(data)
-  t.equals(match, true)
-})
-
-test('5 kHz', function (t) {
-  t.plan(1)
-
-  var opts = {
-    // hz
-    targetFrequency: 5000,
-    // samples per second
-    sampleRate: 20000,
-    // samples per block
-    numSamples: 100
-  }
-
-  var detect = goertzel(opts)
-
-  // generate a sine wave at 5000 Hz
-  var data = []
-  for (var i = 0; i < opts.numSamples; i++) {
-    var v = sin(opts.targetFrequency, i / opts.sampleRate)
-    data.push(v)
-  }
-
-  var match = detect(data)
-  t.equals(match, true)
-})
-
-// 75% of the samples are at 25 Hz
-// 25% of the samples are at 50 Hz
-test('25 Hz and 50 Hz', function (t) {
   t.plan(3)
 
-  var sampleRate = 200
+  var detect = goertzel(1)
+  var gen = sin(1, 1)
+  gen.pipe(detect)
 
-  // detect 50 Hz
-  var goertzel50 = goertzel({
-    // hz
-    targetFrequency: 50,
-    // samples per second
-    sampleRate: sampleRate,
-    // samples per block
-    numSamples: 1000
+  detect.once('toneEnd', function (tones) {
+    t.ok(tones[1])
+    t.ok(tones[1].start === 0)
+    t.ok(tones[1].end > 0)
+    gen.unpipe()
+    t.end()
   })
-  // detect 25 Hz
-  var goertzel25 = goertzel({
-    // hz
-    targetFrequency: 25,
-    // samples per second
-    sampleRate: sampleRate,
-    // samples per block
-    numSamples: 1000
+})
+
+test('1482 Hz', function (t) {
+  t.plan(3)
+
+  var detect = goertzel(1482)
+  var gen = sin(1482, 1)
+  gen.pipe(detect)
+
+  detect.once('toneEnd', function (tones) {
+    t.ok(tones[1482])
+    t.ok(tones[1482].start === 0)
+    t.ok(tones[1482].end > 0)
+    gen.unpipe()
+    t.end()
   })
-  // detect 7 Hz
-  var goertzel7 = goertzel({
-    // hz
-    targetFrequency: 7,
-    // samples per second
-    sampleRate: sampleRate,
-    // samples per block
-    numSamples: 1000
+})
+
+// 50% of the samples are at 250 Hz
+// 50% of the samples are at 559 Hz
+test('250 Hz and 559 Hz', function (t) {
+  t.plan(8)
+
+  var detect = goertzel([250, 559, 170])
+
+  var gen = Generator(function (time) {
+    if (time <= 0.5) {
+      return Math.sin(Math.PI * 2 * time * 250)
+    } else if (time <= 1) {
+      return Math.sin(Math.PI * 2 * time * 559)
+    } else {
+      return 0
+    }
   })
 
-  var data = []
+  gen.pipe(detect)
 
-  // generate 750 samples at 25 Hz
-  for (var i = 0; i < 750; i++) {
-    var v = sin(25, i / sampleRate)
-    data.push(v)
-  }
+  detect.once('toneEnd', function (tones) {
+    t.ok(tones[250])
+    t.ok(tones[250].start === 0)
+    t.ok(tones[250].end > 0)
+    t.ok(!tones[170])
 
-  // generate 250 samples at 50 Hz
-  for (i = 0; i < 250; i++) {
-    v = sin(50, i / sampleRate)
-    data.push(v)
-  }
-
-  // check for 50 Hz
-  var match = goertzel50(data)
-  t.equals(match, true)
-
-  // check for 25 Hz
-  match = goertzel25(data)
-  t.equals(match, true)
-
-  // check for 7 Hz
-  match = goertzel7(data)
-  t.equals(match, false)
+    detect.once('toneEnd', function (tones) {
+      t.ok(tones[559])
+      t.ok(tones[559].start >= 0.4)
+      t.ok(tones[559].end <= 1)
+      t.ok(!tones[170])
+      gen.unpipe()
+    })
+  })
 })
