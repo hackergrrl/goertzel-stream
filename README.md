@@ -1,74 +1,82 @@
-# goertzel
+# goertzel-stream
 
-> Implements [the Goertzel
-algorithm](https://en.wikipedia.org/wiki/Goertzel_algorithm) for efficient
-frequency detection.
+> Detects the presence of a single frequency in a stream of signal samples.
 
 # example
 
 ```js
-var goertzel = require('goertzel')
+var goertzel = require('goertzel-stream')
+var Generator = require('audio-generator')
 
-var opts = {
-  // 1 kHz
-  targetFrequency: 1000,
-  // samples per second
-  sampleRate: 10000,
-  // samples per block
-  numSamples: 100
-}
+var freq = 697
 
-var detect = goertzel(opts)
+// Generate a sine wave at 697 Hz
+var gen = Generator(function (time) {
+  if (time > 1) {
+    return 0
+  } else {
+    return Math.sin(Math.PI * 2 * time * freq)
+  }
+})
 
-// generate sine wave at some Hz and time (ms)
-function sin (hz, t) {
-  return Math.sin(Math.PI * 2 * t * hz)
-}
+// Detection stream looking for the 697 Hz frequency
+var detect = goertzel(freq)
 
-// sine at 1 kHz for 100 samples
-var data = []
-for (var i = 0; i < opts.numSamples; i++) {
-  var v = sin(opts.targetFrequency, i / opts.sampleRate)
-  data.push(v)
-}
+// Pipe the signal into the detector
+gen.pipe(detect)
 
-console.log(detect(data))
+detect.on('toneStart', function (tones) {
+  console.log('start', tones)
+})
+detect.on('toneEnd', function (tones) {
+  console.log('start', tones)
+})
 ```
 
 ```
-true
+{ '697': { start: 0 } }
+{ '697': { start: 0, end: 1 } }
 ```
 
-# methods
+# api
 
-## var detect = goertzel(opts={})
+## var detect = goertzel(freq, opts={})
 
-Returns a function set to detect a single frequency.
+Returns a WriteStream set to detect a single frequency, `freq`. Pipe an audio
+source into this.
 
 `opts` is mandatory, and has some required and optional parameters:
 
-- `opts.targetFrequency` (required) - the frequency, in Hertz, to detect the
-  presence of
 - `opts.sampleRate` (required) - how many samples are taken per second. For best
   results, this should be at least twice the [Nyquist
   frequency](https://en.wikipedia.org/wiki/Nyquist_frequency). 2.5x works well.
-- `opts.threshold` (optional) - The Goertzel algorithm returns a relative
-  magnitude of how well the samples match the `targetFrequency`. Set this to
-  control the threshold. In general, the default value can be used safely.
+- `opts.testsPerSecond` (optional) - How many tests for the frequency to perform
+  per second's worth of samples. Defaults to 100.
 
-## detect(data)
+## detect.on('toneStart', function (tones) { ... })
 
-Returns a `boolean`: `true` if the `targetFrequency` is present in the samples,
-and `false` otherwise.
+Emitted when a tone begins. `tones` is an object mapping a frequency to its
+start time.
 
-`data` is expected to be compatible with a `Float32Array`.
+```
+{ '697': { start: 0 } }
+```
+
+## detect.on('toneEnd', function (tones) { ... })
+
+Emitted when a detected tone ends. `tones` is an object mapping a frequency to
+its start time and end time.
+
+```
+{ '697': { start: 0, end: 1 } }
+```
 
 # install
 
 With [npm](https://npmjs.org/) installed, run
 
 ```
-$ npm install goertzel
+$ npm install goertzel-stream
 ```
 
 # license
