@@ -6,7 +6,7 @@ var WritableStream = require('stream').Writable
 util.inherits(GoertzelStream, EventEmitter)
 util.inherits(GoertzelStream, WritableStream)
 
-function GoertzelStream(freqs, opts) {
+function GoertzelStream (freqs, opts) {
   if (!(this instanceof GoertzelStream)) {
     return new GoertzelStream(freqs, opts)
   }
@@ -15,7 +15,7 @@ function GoertzelStream(freqs, opts) {
   if (typeof freqs === 'number') {
     freqs = [freqs]
   }
-  if (!freqs || (typeof freqs != 'object') || freqs.length === 0) {
+  if (!freqs || (typeof freqs !== 'object') || freqs.length === 0) {
     throw new Error('first argument must be an array of frequencies to detect')
   }
   opts = opts || {}
@@ -49,7 +49,7 @@ function GoertzelStream(freqs, opts) {
     var self = this
     // TODO: accumulate in buffer when buffer.length < chunkSize
     if (chunks <= 0) { throw new Error('chunk size too small') }
-    for (var i=0; i < chunks; i++) {
+    for (var i = 0; i < chunks; i++) {
       var slice = chunk.slice(i * chunkSize, i * chunkSize + chunkSize)
 
       // console.log(slice)
@@ -68,7 +68,7 @@ function GoertzelStream(freqs, opts) {
       // console.log('slice', slice.length)
 
       // Run the slice of samples through each goertzel detector.
-      for (var j=0; j < detectors.length; j++) {
+      for (var j = 0; j < detectors.length; j++) {
         var freq = freqs[j]
 
         if (detectors[j](slice)) {
