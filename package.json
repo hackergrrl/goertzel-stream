@@ -10,7 +10,7 @@
     "test": "tape test/*.js && standard"
   },
   "dependencies": {
-    "goertzel": "^1.0.0"
+    "goertzel": "^3.0.0"
   },
   "devDependencies": {
     "standard": "5.4.1",

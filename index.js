@@ -26,7 +26,8 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
   var detectors = freqs.map(function (f) {
     return goertzel({
       targetFrequency: f,
-      sampleRate: sampleRate
+      sampleRate: sampleRate,
+      samplesPerFrame: sampleRate / testsPerSecond
     })
   })
 
@@ -47,6 +48,8 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
     for (var i=0; i < chunks; i++) {
       var slice = chunk.slice(i * chunkSize, i * chunkSize + chunkSize)
 
+      // console.log(slice)
+
       process(slice)
 
       // Move the current time forward.
@@ -58,6 +61,7 @@ function GoertzelStream(freqs, sampleRate, testsPerSecond) {
     function process (slice) {
       var justStarted = []
       var justEnded = []
+      // console.log('slice', slice.length)
 
       // Run the slice of samples through each goertzel detector.
       for (var j=0; j < detectors.length; j++) {
