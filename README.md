@@ -42,8 +42,8 @@ detect.on('toneEnd', function (tones) {
 
 ## var detect = goertzel(freq, opts={})
 
-Returns a WriteStream set to detect a single frequency, `freq`. Pipe an audio
-source into this.
+Returns a WriteStream set to detect frequencies. `freq` can be a single number
+or an array of frequencies to detect.
 
 `opts` is mandatory, and has some required and optional parameters:
 
@@ -52,6 +52,8 @@ source into this.
   frequency](https://en.wikipedia.org/wiki/Nyquist_frequency). 2.5x works well.
 - `opts.testsPerSecond` (optional) - How many tests for the frequency to perform
   per second's worth of samples. Defaults to 100.
+
+Now you're ready to pipe in an audio source!
 
 ## detect.on('toneStart', function (tones) { ... })
 
