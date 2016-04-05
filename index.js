@@ -6,17 +6,17 @@ var WritableStream = require('stream').Writable
 util.inherits(GoertzelStream, EventEmitter)
 util.inherits(GoertzelStream, WritableStream)
 
-function GoertzelStream(freqs, sampleRate, testsPerSecond) {
+function GoertzelStream(freqs, opts) {
   if (!(this instanceof GoertzelStream)) {
-    return new GoertzelStream(freqs, sampleRate, testsPerSecond)
+    return new GoertzelStream(freqs, opts)
   }
 
   // Validate arguments.
   if (!freqs || (typeof freqs != 'object') || freqs.length === 0) {
     throw new Error('first argument must be an array of frequencies to detect')
   }
-  sampleRate = sampleRate || 44100
-  testsPerSecond = testsPerSecond || 50
+  var sampleRate = opts.sampleRate || 44100
+  var testsPerSecond = opts.testsPerSecond || 100
 
   // This is an event emitter and a writable stream.
   EventEmitter.call(this)
