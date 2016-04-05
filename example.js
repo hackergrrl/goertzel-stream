@@ -28,7 +28,9 @@ var symbolMap = [
   [ '#', '0', '*', 'D' ]
 ]
 
-var detector = goertzel(dtmf, 44100, 66)
+var detector = goertzel(dtmf, {
+  sampleRate: 44100
+})
 
 // mic().pipe(detector)
 
@@ -37,21 +39,9 @@ var tones = new Array(10).fill().map(function () {
 })
 console.log(tones)
 
-Generator(
-    function (time) {
-        // if (time > tones.length) { return 0 }
-        // console.log(tones[Math.floor(time/2)])
-        // console.log(tones[Math.floor(time)])
-        return [
-            Math.sin(Math.PI * 2 * time * tones[Math.floor(time)]),
-            // Math.sin(Math.PI * 2 * time * tones[Math.floor(time)])
-        ]
-    },
-    {
-        duration: Infinity,
-        period: Infinity,
-        frequency: undefined
-    })
+Generator(function (time) {
+  return Math.sin(Math.PI * 2 * time * tones[Math.floor(time)])
+})
 .pipe(detector)
 
 detector.on('onToneStart', function (tones) {
