@@ -44,10 +44,10 @@ Generator(function (time) {
 })
 .pipe(detector)
 
-detector.on('onToneStart', function (tones) {
+detector.on('toneStart', function (tones) {
   console.log('start', tones)
 })
-detector.on('onToneEnd', function (tones) {
+detector.on('toneEnd', function (tones) {
   console.log('end', tones)
   tones.map(function (tone) {
     // console.log(tone[0], tone[2] - tone[1])

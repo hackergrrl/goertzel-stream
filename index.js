@@ -12,9 +12,13 @@ function GoertzelStream(freqs, opts) {
   }
 
   // Validate arguments.
+  if (typeof freqs === 'number') {
+    freqs = [freqs]
+  }
   if (!freqs || (typeof freqs != 'object') || freqs.length === 0) {
     throw new Error('first argument must be an array of frequencies to detect')
   }
+  opts = opts || {}
   var sampleRate = opts.sampleRate || 44100
   var testsPerSecond = opts.testsPerSecond || 100
 
@@ -59,8 +63,8 @@ function GoertzelStream(freqs, opts) {
     next()
 
     function process (slice) {
-      var justStarted = []
-      var justEnded = []
+      var justStarted = {}
+      var justEnded = {}
       // console.log('slice', slice.length)
 
       // Run the slice of samples through each goertzel detector.
@@ -71,20 +75,23 @@ function GoertzelStream(freqs, opts) {
           if (active[freq] === undefined) {
             // console.log(i, 'yes', freq)
             active[freq] = t
-            justStarted.push([freq, t])
+            justStarted[freq] = { start: t }
           }
         } else if (active[freq] !== undefined) {
-          justEnded.push([freq, active[freq], t + 1 / testsPerSecond])
+          justEnded[freq] = {
+            start: active[freq],
+            end: t + 1 / testsPerSecond
+          }
           // console.log(i, 'no', freq)
           delete active[freq]
         }
       }
 
-      if (justStarted.length > 0) {
-        self.emit('onToneStart', justStarted)
+      if (Object.keys(justStarted).length > 0) {
+        self.emit('toneStart', justStarted)
       }
-      if (justEnded.length > 0) {
-        self.emit('onToneEnd', justEnded)
+      if (Object.keys(justEnded).length > 0) {
+        self.emit('toneEnd', justEnded)
       }
     }
   }
